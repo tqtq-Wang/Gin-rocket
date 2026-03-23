@@ -5,6 +5,7 @@ import (
 	"gin-rocket/internal/middleware"
 	"gin-rocket/internal/service"
 	"gin-rocket/pkg/configx"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -16,6 +17,7 @@ func New(
 	healthHandler *handler.HealthHandler,
 	authHandler *handler.AuthHandler,
 	menuHandler *handler.MenuHandler,
+	swaggerHandler *handler.SwaggerHandler,
 	userHandler *handler.UserHandler,
 	authService service.AuthService,
 	permissionService service.PermissionService,
@@ -31,6 +33,13 @@ func New(
 
 	engine.GET("/healthz", healthHandler.Live)
 	engine.GET("/readyz", healthHandler.Ready)
+
+	if cfg.Swagger.Enabled {
+		swaggerPath := strings.TrimRight(cfg.Swagger.RoutePrefix, "/")
+		engine.GET(swaggerPath, swaggerHandler.UI)
+		engine.GET(swaggerPath+"/", swaggerHandler.UI)
+		engine.GET(swaggerPath+"/openapi.yaml", swaggerHandler.Spec)
+	}
 
 	v1 := engine.Group("/api/v1")
 	{

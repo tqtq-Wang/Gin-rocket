@@ -25,6 +25,14 @@ auth:
   refresh_token_prefix: auth:refresh
   permission_cache_ttl: 5m
 
+swagger:
+  enabled: true
+  route_prefix: /swagger
+  title: Gin Rocket API
+  description: Gin Rocket backend APIs
+  version: 1.0.0
+  server_url: ""
+
 mysql:
   host: 127.0.0.1
   port: 3306
@@ -51,3 +59,14 @@ redis:
   dial_timeout: 5s
   read_timeout: 3s
   write_timeout: 3s
+
+minio:
+  enabled: false
+  endpoint: 127.0.0.1:9000
+  access_key: minioadmin
+  secret_key: minioadmin
+  use_ssl: false
+  bucket: gin-rocket
+  location: ap-east-1
+  auto_create_bucket: true
+  base_url: ""

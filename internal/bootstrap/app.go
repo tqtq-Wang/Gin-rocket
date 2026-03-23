@@ -17,8 +17,10 @@ import (
 	"gin-rocket/pkg/database"
 	"gin-rocket/pkg/jwtx"
 	"gin-rocket/pkg/logger"
+	"gin-rocket/pkg/storage"
 	"gin-rocket/router"
 
+	"github.com/minio/minio-go/v7"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -29,6 +31,7 @@ type Application struct {
 	Logger     *zap.Logger
 	DB         *gorm.DB
 	Redis      *redis.Client
+	MinIO      *minio.Client
 	HTTPServer *http.Server
 }
 
@@ -76,6 +79,19 @@ func NewApplication() (*Application, error) {
 		return nil, fmt.Errorf("init health handler: %w", err)
 	}
 
+	var minioClient *minio.Client
+	if cfg.MinIO.Enabled {
+		minioClient, err = storage.NewMinIO(context.Background(), cfg.MinIO, appLogger)
+		if err != nil {
+			_ = redisClient.Close()
+			closeSQLDB(db)
+			_ = appLogger.Sync()
+			return nil, fmt.Errorf("init minio: %w", err)
+		}
+
+		appLogger.Info("minio enabled", zap.String("endpoint", cfg.MinIO.Endpoint), zap.String("bucket", cfg.MinIO.Bucket))
+	}
+
 	userRepo := repository.NewGormUserRepository(db)
 	permissionRepo := repository.NewGormPermissionRepository(db)
 	authorizationCacheRepo := repository.NewRedisAuthorizationCacheRepository(redisClient)
@@ -101,6 +117,7 @@ func NewApplication() (*Application, error) {
 
 	authHandler := handler.NewAuthHandler(authService)
 	menuHandler := handler.NewMenuHandler(permissionService)
+	swaggerHandler := handler.NewSwaggerHandler(cfg.Swagger)
 	userHandler := handler.NewUserHandler(userService)
 
 	engine := router.New(
@@ -109,6 +126,7 @@ func NewApplication() (*Application, error) {
 		healthHandler,
 		authHandler,
 		menuHandler,
+		swaggerHandler,
 		userHandler,
 		authService,
 		permissionService,
@@ -126,6 +144,7 @@ func NewApplication() (*Application, error) {
 		Logger:     appLogger,
 		DB:         db,
 		Redis:      redisClient,
+		MinIO:      minioClient,
 		HTTPServer: httpServer,
 	}, nil
 }
