@@ -1,0 +1,48 @@
+app:
+  name: gin-rocket
+  env: dev
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  mode: release
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 60s
+  shutdown_timeout: 10s
+
+log:
+  level: info
+  format: json
+  disable_stacktrace: false
+
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  user: root
+  password: root
+  db_name: gin_rocket
+  charset: utf8mb4
+  parse_time: true
+  loc: Local
+  max_idle_conns: 10
+  max_open_conns: 50
+  conn_max_lifetime: 30m
+  conn_max_idle_time: 15m
+  log_level: warn
+  slow_threshold: 200ms
+
+redis:
+  addr: 127.0.0.1:6379
+  username: ""
+  password: ""
+  db: 0
+  pool_size: 20
+  min_idle_conns: 5
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s
+
+cache:
+  user_ttl: 5m
+
