@@ -15,6 +15,7 @@ import (
 	"gin-rocket/pkg/cache"
 	"gin-rocket/pkg/configx"
 	"gin-rocket/pkg/database"
+	"gin-rocket/pkg/jwtx"
 	"gin-rocket/pkg/logger"
 	"gin-rocket/router"
 
@@ -54,6 +55,12 @@ func NewApplication() (*Application, error) {
 		return nil, fmt.Errorf("auto migrate: %w", err)
 	}
 
+	if err := seedRBACData(db, appLogger); err != nil {
+		closeSQLDB(db)
+		_ = appLogger.Sync()
+		return nil, fmt.Errorf("seed rbac data: %w", err)
+	}
+
 	redisClient, err := cache.NewRedis(cfg.Redis)
 	if err != nil {
 		closeSQLDB(db)
@@ -70,11 +77,42 @@ func NewApplication() (*Application, error) {
 	}
 
 	userRepo := repository.NewGormUserRepository(db)
-	userCacheRepo := repository.NewRedisUserCacheRepository(redisClient)
-	userService := service.NewUserService(userRepo, userCacheRepo, appLogger, cfg.Cache.UserTTL)
+	permissionRepo := repository.NewGormPermissionRepository(db)
+	authorizationCacheRepo := repository.NewRedisAuthorizationCacheRepository(redisClient)
+	refreshTokenRepo := repository.NewRedisRefreshTokenRepository(redisClient, cfg.Auth.RefreshTokenPrefix)
+	jwtManager := jwtx.NewManager(cfg.Auth)
+
+	userService := service.NewUserService(userRepo)
+	authService := service.NewAuthService(
+		userRepo,
+		refreshTokenRepo,
+		authorizationCacheRepo,
+		jwtManager,
+		cfg.Auth.PermissionCacheTTL,
+		appLogger,
+	)
+	permissionService := service.NewPermissionService(
+		userRepo,
+		permissionRepo,
+		authorizationCacheRepo,
+		cfg.Auth.PermissionCacheTTL,
+		appLogger,
+	)
+
+	authHandler := handler.NewAuthHandler(authService)
+	menuHandler := handler.NewMenuHandler(permissionService)
 	userHandler := handler.NewUserHandler(userService)
 
-	engine := router.New(cfg, appLogger, healthHandler, userHandler)
+	engine := router.New(
+		cfg,
+		appLogger,
+		healthHandler,
+		authHandler,
+		menuHandler,
+		userHandler,
+		authService,
+		permissionService,
+	)
 	httpServer := &http.Server{
 		Addr:         net.JoinHostPort(cfg.Server.Host, strconv.Itoa(cfg.Server.Port)),
 		Handler:      engine,

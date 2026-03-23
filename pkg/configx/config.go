@@ -14,9 +14,9 @@ type Config struct {
 	App    AppConfig    `mapstructure:"app"`
 	Server ServerConfig `mapstructure:"server"`
 	Log    LogConfig    `mapstructure:"log"`
+	Auth   AuthConfig   `mapstructure:"auth"`
 	MySQL  MySQLConfig  `mapstructure:"mysql"`
 	Redis  RedisConfig  `mapstructure:"redis"`
-	Cache  CacheConfig  `mapstructure:"cache"`
 }
 
 type AppConfig struct {
@@ -38,6 +38,16 @@ type LogConfig struct {
 	Level             string `mapstructure:"level"`
 	Format            string `mapstructure:"format"`
 	DisableStacktrace bool   `mapstructure:"disable_stacktrace"`
+}
+
+type AuthConfig struct {
+	Issuer             string        `mapstructure:"issuer"`
+	AccessSecret       string        `mapstructure:"access_secret"`
+	RefreshSecret      string        `mapstructure:"refresh_secret"`
+	AccessTTL          time.Duration `mapstructure:"access_ttl"`
+	RefreshTTL         time.Duration `mapstructure:"refresh_ttl"`
+	RefreshTokenPrefix string        `mapstructure:"refresh_token_prefix"`
+	PermissionCacheTTL time.Duration `mapstructure:"permission_cache_ttl"`
 }
 
 type MySQLConfig struct {
@@ -67,10 +77,6 @@ type RedisConfig struct {
 	DialTimeout  time.Duration `mapstructure:"dial_timeout"`
 	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout time.Duration `mapstructure:"write_timeout"`
-}
-
-type CacheConfig struct {
-	UserTTL time.Duration `mapstructure:"user_ttl"`
 }
 
 func Load() (*Config, error) {
@@ -127,6 +133,14 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("log.format", "json")
 	v.SetDefault("log.disable_stacktrace", false)
 
+	v.SetDefault("auth.issuer", "gin-rocket")
+	v.SetDefault("auth.access_secret", "please-change-access-secret")
+	v.SetDefault("auth.refresh_secret", "please-change-refresh-secret")
+	v.SetDefault("auth.access_ttl", "2h")
+	v.SetDefault("auth.refresh_ttl", "168h")
+	v.SetDefault("auth.refresh_token_prefix", "auth:refresh")
+	v.SetDefault("auth.permission_cache_ttl", "5m")
+
 	v.SetDefault("mysql.charset", "utf8mb4")
 	v.SetDefault("mysql.parse_time", true)
 	v.SetDefault("mysql.loc", "Local")
@@ -143,8 +157,6 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("redis.dial_timeout", "5s")
 	v.SetDefault("redis.read_timeout", "3s")
 	v.SetDefault("redis.write_timeout", "3s")
-
-	v.SetDefault("cache.user_ttl", "5m")
 }
 
 func (c *Config) Validate() error {
@@ -161,6 +173,14 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("mysql.db_name is required")
 	case c.Redis.Addr == "":
 		return fmt.Errorf("redis.addr is required")
+	case c.Auth.AccessSecret == "":
+		return fmt.Errorf("auth.access_secret is required")
+	case c.Auth.RefreshSecret == "":
+		return fmt.Errorf("auth.refresh_secret is required")
+	case c.Auth.AccessTTL <= 0:
+		return fmt.Errorf("auth.access_ttl must be greater than 0")
+	case c.Auth.RefreshTTL <= 0:
+		return fmt.Errorf("auth.refresh_ttl must be greater than 0")
 	}
 
 	return nil

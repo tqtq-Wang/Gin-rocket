@@ -16,6 +16,15 @@ log:
   format: json
   disable_stacktrace: false
 
+auth:
+  issuer: gin-rocket
+  access_secret: please-change-access-secret
+  refresh_secret: please-change-refresh-secret
+  access_ttl: 2h
+  refresh_ttl: 168h
+  refresh_token_prefix: auth:refresh
+  permission_cache_ttl: 5m
+
 mysql:
   host: 127.0.0.1
   port: 3306
@@ -42,7 +51,3 @@ redis:
   dial_timeout: 5s
   read_timeout: 3s
   write_timeout: 3s
-
-cache:
-  user_ttl: 5m
-
