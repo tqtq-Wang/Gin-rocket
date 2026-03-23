@@ -18,26 +18,37 @@ type AuthHandler struct {
 }
 
 type registerRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	Nickname string `json:"nickname" binding:"required"`
-	Email    string `json:"email"`
+	Username string `json:"username" binding:"required" example:"admin"`
+	Password string `json:"password" binding:"required" example:"Admin@123456"`
+	Nickname string `json:"nickname" binding:"required" example:"admin"`
+	Email    string `json:"email" example:"admin@example.com"`
 }
 
 type loginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username string `json:"username" binding:"required" example:"admin"`
+	Password string `json:"password" binding:"required" example:"Admin@123456"`
 }
 
 type refreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
+	RefreshToken string `json:"refresh_token" binding:"required" example:"refresh-token"`
 }
 
 func NewAuthHandler(authService service.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
-// Register 创建新用户，并在首个用户时自动授予超级管理员角色。
+// Register godoc
+// @Summary Register user
+// @Description Create a new user. The first registered user becomes super-admin automatically.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body registerRequest true "register request"
+// @Success 201 {object} response.Body
+// @Failure 400 {object} response.Body
+// @Failure 409 {object} response.Body
+// @Failure 500 {object} response.Body
+// @Router /api/v1/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,7 +75,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	response.Success(c, http.StatusCreated, result)
 }
 
-// Login 用用户名密码换取访问令牌和刷新令牌。
+// Login godoc
+// @Summary Login
+// @Description Login with username and password, then return tokens, user info and permission codes.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body loginRequest true "login request"
+// @Success 200 {object} response.Body
+// @Failure 400 {object} response.Body
+// @Failure 401 {object} response.Body
+// @Failure 500 {object} response.Body
+// @Router /api/v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,7 +108,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.Success(c, http.StatusOK, result)
 }
 
-// Refresh 使用刷新令牌换取新的 token 对。
+// Refresh godoc
+// @Summary Refresh token
+// @Description Exchange refresh token for a new access token and refresh token.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body refreshRequest true "refresh request"
+// @Success 200 {object} response.Body
+// @Failure 400 {object} response.Body
+// @Failure 401 {object} response.Body
+// @Failure 500 {object} response.Body
+// @Router /api/v1/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req refreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,7 +141,17 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	response.Success(c, http.StatusOK, gin.H{"token_pair": tokenPair})
 }
 
-// Me 返回当前登录用户和其权限码列表。
+// Me godoc
+// @Summary Get current user
+// @Description Return current user profile and permission code list for menu and button rendering.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Body
+// @Failure 401 {object} response.Body
+// @Failure 500 {object} response.Body
+// @Router /api/v1/auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	currentUser, ok := middleware.GetAuthUser(c)
 	if !ok {

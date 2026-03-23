@@ -79,6 +79,19 @@ func seedRBACData(db *gorm.DB, log *zap.Logger) error {
 			return err
 		}
 
+		userCreateButtonPermission := model.Permission{
+			Name:        "新增用户按钮",
+			Code:        "system:user:create",
+			Type:        model.PermissionTypeButton,
+			Path:        "system:user:create",
+			Sort:        120,
+			Status:      model.StatusEnabled,
+			Description: "前端新增用户按钮权限",
+		}
+		if err := upsertPermission(tx, &userCreateButtonPermission); err != nil {
+			return err
+		}
+
 		var permissions []model.Permission
 		if err := tx.Where("status = ?", model.StatusEnabled).Find(&permissions).Error; err != nil {
 			return err

@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +19,6 @@ func New(
 	healthHandler *handler.HealthHandler,
 	authHandler *handler.AuthHandler,
 	menuHandler *handler.MenuHandler,
-	swaggerHandler *handler.SwaggerHandler,
 	userHandler *handler.UserHandler,
 	authService service.AuthService,
 	permissionService service.PermissionService,
@@ -36,9 +37,10 @@ func New(
 
 	if cfg.Swagger.Enabled {
 		swaggerPath := strings.TrimRight(cfg.Swagger.RoutePrefix, "/")
-		engine.GET(swaggerPath, swaggerHandler.UI)
-		engine.GET(swaggerPath+"/", swaggerHandler.UI)
-		engine.GET(swaggerPath+"/openapi.yaml", swaggerHandler.Spec)
+		engine.GET(swaggerPath, func(c *gin.Context) {
+			c.Redirect(302, swaggerPath+"/index.html")
+		})
+		engine.GET(swaggerPath+"/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	}
 
 	v1 := engine.Group("/api/v1")

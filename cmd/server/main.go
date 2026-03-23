@@ -9,11 +9,20 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "gin-rocket/docs"
 	"gin-rocket/internal/bootstrap"
 
 	"go.uber.org/zap"
 )
 
+// @title Gin Rocket API
+// @version 1.0.0
+// @description Gin Rocket backend APIs with RBAC and JWT authentication.
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Use format: Bearer {access_token}
 func main() {
 	app, err := bootstrap.NewApplication()
 	if err != nil {

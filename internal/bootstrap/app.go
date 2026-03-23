@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 
+	"gin-rocket/docs"
 	"gin-rocket/internal/handler"
 	"gin-rocket/internal/model"
 	"gin-rocket/internal/repository"
@@ -64,6 +66,21 @@ func NewApplication() (*Application, error) {
 		return nil, fmt.Errorf("seed rbac data: %w", err)
 	}
 
+	docs.SwaggerInfo.Title = cfg.Swagger.Title
+	docs.SwaggerInfo.Description = cfg.Swagger.Description
+	docs.SwaggerInfo.Version = cfg.Swagger.Version
+	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Host = ""
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
+	if cfg.Swagger.ServerURL != "" {
+		if parsedURL, err := url.Parse(cfg.Swagger.ServerURL); err == nil {
+			docs.SwaggerInfo.Host = parsedURL.Host
+			if parsedURL.Scheme != "" {
+				docs.SwaggerInfo.Schemes = []string{parsedURL.Scheme}
+			}
+		}
+	}
+
 	redisClient, err := cache.NewRedis(cfg.Redis)
 	if err != nil {
 		closeSQLDB(db)
@@ -117,7 +134,6 @@ func NewApplication() (*Application, error) {
 
 	authHandler := handler.NewAuthHandler(authService)
 	menuHandler := handler.NewMenuHandler(permissionService)
-	swaggerHandler := handler.NewSwaggerHandler(cfg.Swagger)
 	userHandler := handler.NewUserHandler(userService)
 
 	engine := router.New(
@@ -126,7 +142,6 @@ func NewApplication() (*Application, error) {
 		healthHandler,
 		authHandler,
 		menuHandler,
-		swaggerHandler,
 		userHandler,
 		authService,
 		permissionService,

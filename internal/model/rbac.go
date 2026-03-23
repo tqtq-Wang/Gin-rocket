@@ -3,8 +3,9 @@ package model
 import "time"
 
 const (
-	PermissionTypeAPI  = "api"
-	PermissionTypeMenu = "menu"
+	PermissionTypeAPI    = "api"
+	PermissionTypeMenu   = "menu"
+	PermissionTypeButton = "button"
 
 	RoleCodeSuperAdmin = "super-admin"
 )
