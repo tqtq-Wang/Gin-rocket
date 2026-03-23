@@ -22,7 +22,6 @@ import (
 	"gin-rocket/pkg/storage"
 	"gin-rocket/router"
 
-	"github.com/minio/minio-go/v7"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -33,7 +32,7 @@ type Application struct {
 	Logger     *zap.Logger
 	DB         *gorm.DB
 	Redis      *redis.Client
-	MinIO      *minio.Client
+	MinIO      *storage.MinIOStore
 	HTTPServer *http.Server
 }
 
@@ -96,9 +95,9 @@ func NewApplication() (*Application, error) {
 		return nil, fmt.Errorf("init health handler: %w", err)
 	}
 
-	var minioClient *minio.Client
+	var minioStore *storage.MinIOStore
 	if cfg.MinIO.Enabled {
-		minioClient, err = storage.NewMinIO(context.Background(), cfg.MinIO, appLogger)
+		minioStore, err = storage.NewMinIO(context.Background(), cfg.MinIO, appLogger)
 		if err != nil {
 			_ = redisClient.Close()
 			closeSQLDB(db)
@@ -131,8 +130,10 @@ func NewApplication() (*Application, error) {
 		cfg.Auth.PermissionCacheTTL,
 		appLogger,
 	)
+	fileService := service.NewFileService(minioStore, cfg.MinIO.PresignExpiry)
 
 	authHandler := handler.NewAuthHandler(authService)
+	fileHandler := handler.NewFileHandler(fileService)
 	menuHandler := handler.NewMenuHandler(permissionService)
 	userHandler := handler.NewUserHandler(userService)
 
@@ -141,6 +142,7 @@ func NewApplication() (*Application, error) {
 		appLogger,
 		healthHandler,
 		authHandler,
+		fileHandler,
 		menuHandler,
 		userHandler,
 		authService,
@@ -159,7 +161,7 @@ func NewApplication() (*Application, error) {
 		Logger:     appLogger,
 		DB:         db,
 		Redis:      redisClient,
-		MinIO:      minioClient,
+		MinIO:      minioStore,
 		HTTPServer: httpServer,
 	}, nil
 }

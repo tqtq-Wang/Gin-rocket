@@ -18,6 +18,7 @@ func New(
 	log *zap.Logger,
 	healthHandler *handler.HealthHandler,
 	authHandler *handler.AuthHandler,
+	fileHandler *handler.FileHandler,
 	menuHandler *handler.MenuHandler,
 	userHandler *handler.UserHandler,
 	authService service.AuthService,
@@ -57,6 +58,10 @@ func New(
 
 		permissionProtected := authorized.Group("")
 		permissionProtected.Use(middleware.Permission(permissionService))
+		permissionProtected.GET("/files/presign", fileHandler.Presign)
+		permissionProtected.POST("/files/upload", fileHandler.Upload)
+		permissionProtected.POST("/files/upload-multiple", fileHandler.UploadMultiple)
+		permissionProtected.DELETE("/files", fileHandler.Delete)
 		permissionProtected.GET("/users/:id", userHandler.GetByID)
 	}
 

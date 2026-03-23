@@ -92,6 +92,62 @@ func seedRBACData(db *gorm.DB, log *zap.Logger) error {
 			return err
 		}
 
+		fileUploadPermission := model.Permission{
+			Name:        "上传文件",
+			Code:        "system:file:upload",
+			Type:        model.PermissionTypeAPI,
+			Method:      "POST",
+			Path:        "/api/v1/files/upload",
+			Sort:        130,
+			Status:      model.StatusEnabled,
+			Description: "上传单文件接口权限",
+		}
+		if err := upsertPermission(tx, &fileUploadPermission); err != nil {
+			return err
+		}
+
+		fileUploadMultiplePermission := model.Permission{
+			Name:        "批量上传文件",
+			Code:        "system:file:upload-multiple",
+			Type:        model.PermissionTypeAPI,
+			Method:      "POST",
+			Path:        "/api/v1/files/upload-multiple",
+			Sort:        131,
+			Status:      model.StatusEnabled,
+			Description: "批量上传文件接口权限",
+		}
+		if err := upsertPermission(tx, &fileUploadMultiplePermission); err != nil {
+			return err
+		}
+
+		fileDeletePermission := model.Permission{
+			Name:        "删除文件",
+			Code:        "system:file:delete",
+			Type:        model.PermissionTypeAPI,
+			Method:      "DELETE",
+			Path:        "/api/v1/files",
+			Sort:        132,
+			Status:      model.StatusEnabled,
+			Description: "删除文件接口权限",
+		}
+		if err := upsertPermission(tx, &fileDeletePermission); err != nil {
+			return err
+		}
+
+		filePresignPermission := model.Permission{
+			Name:        "获取文件访问链接",
+			Code:        "system:file:presign",
+			Type:        model.PermissionTypeAPI,
+			Method:      "GET",
+			Path:        "/api/v1/files/presign",
+			Sort:        133,
+			Status:      model.StatusEnabled,
+			Description: "获取文件预签名链接接口权限",
+		}
+		if err := upsertPermission(tx, &filePresignPermission); err != nil {
+			return err
+		}
+
 		var permissions []model.Permission
 		if err := tx.Where("status = ?", model.StatusEnabled).Find(&permissions).Error; err != nil {
 			return err

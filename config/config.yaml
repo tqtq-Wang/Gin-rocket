@@ -70,3 +70,4 @@ minio:
   location: ap-east-1
   auto_create_bucket: true
   base_url: ""
+  presign_expiry: 15m

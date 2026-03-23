@@ -1,73 +1,62 @@
 # Gin Rocket
 
-基于 `Golang + Gin + GORM + MySQL + Redis + Zap + Viper` 的企业级后端脚手架，当前已内置完整 RBAC、JWT 认证、Swagger 文档和可选 MinIO 集成。
+基于 `Golang + Gin + GORM + MySQL + Redis + Zap + Viper` 的企业级后端脚手架，当前已内置 RBAC、JWT、Swagger 和可选 MinIO 文件能力。
 
-## 当前权限模型
+## 已实现能力
 
-已支持的权限类型：
+### 权限模型
 
 - `api`
-  说明：基于 `Gin 路由路径 + HTTP 方法` 进行权限控制
+  说明：基于 `Gin 路由路径 + HTTP 方法` 控制接口权限
 - `menu`
-  说明：用于前端动态菜单渲染
+  说明：用于前端菜单渲染
 - `button`
-  说明：用于前端按钮级权限控制，当前通过权限码列表下发，后续可继续扩展更细粒度的按钮模型
-
-## 已实现功能
+  说明：用于前端按钮级权限控制，当前以权限码列表形式返回，可继续扩展
 
 ### 认证与权限
 
 - 用户注册
 - 用户登录
-- JWT 认证，包含 `access token + refresh token`
+- `access token + refresh token`
 - 登录返回用户信息和权限列表
-- RBAC 权限校验中间件，自动拦截无权限请求
+- RBAC 权限校验中间件
 - Redis 权限缓存
 - 首个注册用户自动成为 `super-admin`
 
 ### Swagger
 
-- 认证接口已补充 Swagger 注解
+- 认证接口已添加 Swagger 注解
 - 支持 Bearer Token 认证展示
 - 默认启用
 - 访问地址：`/swagger/index.html`
 
 ### MinIO
 
-- 面向开发者按需启用
-- 默认关闭
-- 启用后自动初始化客户端
-- 可按配置自动创建桶
+- `pkg/storage` 已封装 MinIO 工具类
+- 支持自动创建 bucket
+- 支持通过配置定义 `endpoint`、`access_key`、`secret_key`
+- 支持单文件上传
+- 支持多文件上传
+- 支持文件删除
+- 支持预签名 URL
+- 支持按业务分类存储，如 `avatar/`、`docs/`
 
-## 关键接口
+## 文件接口
 
-### 认证接口
+- `POST /api/v1/files/upload`
+  表单字段：
+  `category` 可选，如 `avatar`
+  `file` 必填
+- `POST /api/v1/files/upload-multiple`
+  表单字段：
+  `category` 可选，如 `docs`
+  `files` 必填，可多文件
+- `DELETE /api/v1/files`
+  JSON 字段：
+  `object_key`
+- `GET /api/v1/files/presign?object_key=...&expires=15m`
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/refresh`
-- `GET /api/v1/auth/me`
-
-### 权限相关接口
-
-- `GET /api/v1/menus`
-- `GET /api/v1/users/:id`
-
-## 配置说明
-
-### Swagger
-
-```yaml
-swagger:
-  enabled: true
-  route_prefix: /swagger
-  title: Gin Rocket API
-  description: Gin Rocket backend APIs
-  version: 1.0.0
-  server_url: ""
-```
-
-### MinIO
+## MinIO 配置
 
 ```yaml
 minio:
@@ -80,6 +69,7 @@ minio:
   location: ap-east-1
   auto_create_bucket: true
   base_url: ""
+  presign_expiry: 15m
 ```
 
 ## 启动方式

@@ -1,5 +1,13 @@
 basePath: /
 definitions:
+  handler.deleteFileRequest:
+    properties:
+      object_key:
+        example: avatar/2026/03/23/uuid.png
+        type: string
+    required:
+    - object_key
+    type: object
   handler.loginRequest:
     properties:
       password:
@@ -183,6 +191,176 @@ paths:
       summary: Register user
       tags:
       - auth
+  /api/v1/files:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a file from MinIO by object key.
+      parameters:
+      - description: delete request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.deleteFileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Body'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Body'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/response.Body'
+      security:
+      - BearerAuth: []
+      summary: Delete file
+      tags:
+      - files
+  /api/v1/files/presign:
+    get:
+      consumes:
+      - application/json
+      description: Generate a temporary file access URL by object key.
+      parameters:
+      - description: object key
+        in: query
+        name: object_key
+        required: true
+        type: string
+      - description: expiry duration, e.g. 15m
+        in: query
+        name: expires
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Body'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Body'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/response.Body'
+      security:
+      - BearerAuth: []
+      summary: Generate presigned URL
+      tags:
+      - files
+  /api/v1/files/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload one file to MinIO under a business category such as avatar
+        or docs.
+      parameters:
+      - description: business category
+        in: formData
+        name: category
+        type: string
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Body'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Body'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/response.Body'
+      security:
+      - BearerAuth: []
+      summary: Upload single file
+      tags:
+      - files
+  /api/v1/files/upload-multiple:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload multiple files to MinIO under the same business category.
+      parameters:
+      - description: business category
+        in: formData
+        name: category
+        type: string
+      - description: files
+        in: formData
+        name: files
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Body'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Body'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/response.Body'
+      security:
+      - BearerAuth: []
+      summary: Upload multiple files
+      tags:
+      - files
 securityDefinitions:
   BearerAuth:
     description: 'Use format: Bearer {access_token}'

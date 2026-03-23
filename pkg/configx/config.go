@@ -91,15 +91,16 @@ type RedisConfig struct {
 }
 
 type MinIOConfig struct {
-	Enabled          bool   `mapstructure:"enabled"`
-	Endpoint         string `mapstructure:"endpoint"`
-	AccessKey        string `mapstructure:"access_key"`
-	SecretKey        string `mapstructure:"secret_key"`
-	UseSSL           bool   `mapstructure:"use_ssl"`
-	Bucket           string `mapstructure:"bucket"`
-	Location         string `mapstructure:"location"`
-	AutoCreateBucket bool   `mapstructure:"auto_create_bucket"`
-	BaseURL          string `mapstructure:"base_url"`
+	Enabled          bool          `mapstructure:"enabled"`
+	Endpoint         string        `mapstructure:"endpoint"`
+	AccessKey        string        `mapstructure:"access_key"`
+	SecretKey        string        `mapstructure:"secret_key"`
+	UseSSL           bool          `mapstructure:"use_ssl"`
+	Bucket           string        `mapstructure:"bucket"`
+	Location         string        `mapstructure:"location"`
+	AutoCreateBucket bool          `mapstructure:"auto_create_bucket"`
+	BaseURL          string        `mapstructure:"base_url"`
+	PresignExpiry    time.Duration `mapstructure:"presign_expiry"`
 }
 
 func Load() (*Config, error) {
@@ -197,6 +198,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("minio.location", "ap-east-1")
 	v.SetDefault("minio.auto_create_bucket", true)
 	v.SetDefault("minio.base_url", "")
+	v.SetDefault("minio.presign_expiry", "15m")
 }
 
 func (c *Config) Validate() error {
@@ -231,6 +233,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("minio.secret_key is required when minio is enabled")
 	case c.MinIO.Enabled && c.MinIO.Bucket == "":
 		return fmt.Errorf("minio.bucket is required when minio is enabled")
+	case c.MinIO.Enabled && c.MinIO.PresignExpiry <= 0:
+		return fmt.Errorf("minio.presign_expiry must be greater than 0 when minio is enabled")
 	}
 
 	return nil
